@@ -22,7 +22,12 @@ const products = productsFromServer.map((product) => {
   };
 });
 
-const getPreparedProducts = (allProducts, userIdFilter, nameFilter) => {
+const getPreparedProducts = (
+  allProducts,
+  userIdFilter,
+  nameFilter,
+  categoriesIdFilter,
+) => {
   let preparedGoods = [...allProducts];
 
   if (userIdFilter) {
@@ -38,17 +43,44 @@ const getPreparedProducts = (allProducts, userIdFilter, nameFilter) => {
     ));
   }
 
+  if (categoriesIdFilter.length !== 0) {
+    preparedGoods = preparedGoods
+      .filter(product => categoriesIdFilter.includes(product.categoryId));
+  }
+
   return preparedGoods;
 };
 
 export const App = () => {
-  const [selectedUserId, setSelectedUserId] = useState('');
+  const [selectedUserId, setSelectedUserId] = useState(0);
   const [query, setQuery] = useState('');
-  const visibleProducts = getPreparedProducts(products, selectedUserId, query);
+  const [selectedCategories, setSelectedCategories] = useState([]);
+
+  const visibleProducts = getPreparedProducts(
+    products,
+    selectedUserId,
+    query,
+    selectedCategories,
+  );
 
   const resetAllFilters = () => {
-    setSelectedUserId('');
+    setSelectedUserId(0);
     setQuery('');
+    setSelectedCategories([]);
+  };
+
+  const selectCategory = (categoryIdToAdd) => {
+    setSelectedCategories([
+      ...selectedCategories,
+      categoryIdToAdd,
+    ]);
+  };
+
+  const unselectCategory = (categoryIdToRemove) => {
+    setSelectedCategories(
+      selectedCategories
+        .filter(categoryId => categoryId !== categoryIdToRemove),
+    );
   };
 
   return (
@@ -62,11 +94,11 @@ export const App = () => {
 
             <p className="panel-tabs has-text-weight-bold">
               <a
-                onClick={() => setSelectedUserId('')}
+                onClick={() => setSelectedUserId(0)}
                 data-cy="FilterAllUsers"
                 href="#/"
                 className={classNames({
-                  'is-active': selectedUserId === '',
+                  'is-active': selectedUserId === 0,
                 })}
               >
                 All
@@ -118,43 +150,34 @@ export const App = () => {
 
             <div className="panel-block is-flex-wrap-wrap">
               <a
+                onClick={() => setSelectedCategories([])}
                 href="#/"
                 data-cy="AllCategories"
-                className="button is-success mr-6 is-outlined"
+                // className="button is-success mr-6 is-outlined"
+                className={classNames('button', 'is-success', 'mr-6', {
+                  'is-outlined': selectedCategories.length !== 0,
+                })}
               >
                 All
               </a>
 
-              <a
-                data-cy="Category"
-                className="button mr-2 my-1 is-info"
-                href="#/"
-              >
-                Category 1
-              </a>
-
-              <a
-                data-cy="Category"
-                className="button mr-2 my-1"
-                href="#/"
-              >
-                Category 2
-              </a>
-
-              <a
-                data-cy="Category"
-                className="button mr-2 my-1 is-info"
-                href="#/"
-              >
-                Category 3
-              </a>
-              <a
-                data-cy="Category"
-                className="button mr-2 my-1"
-                href="#/"
-              >
-                Category 4
-              </a>
+              {categoriesFromServer.map(category => (
+                <a
+                  onClick={() => (
+                    selectedCategories.includes(category.id)
+                      ? unselectCategory(category.id)
+                      : selectCategory(category.id)
+                  )}
+                  key={category.id}
+                  data-cy="Category"
+                  className={classNames('button', 'mr-2', 'my-1', {
+                    'is-info': selectedCategories.includes(category.id),
+                  })}
+                  href="#/"
+                >
+                  {category.title}
+                </a>
+              ))}
             </div>
 
             <div className="panel-block">
